@@ -11,6 +11,7 @@ Please go to the config.json file (in this folder) to input your logins for each
 - Install node.js (this bot was tested on v19.6.0)
 - Install npm (Node Package Manager)
 - Run "npm install" in this directory (without quotes)
+- Edit the config.example.json file to you needs (needs to be saved as config.json)
 - Run "node social.js" to run the bot
 
 ============================
