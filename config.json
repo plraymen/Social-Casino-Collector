@@ -27,7 +27,7 @@
     // If login is false standard password will be used instead
     // Logins need to be in the ["username", "password"] format ex ["johnsmith83", "badPassword14"]
     "logins": {
-        "standard": ["username", "password"],
+        "standard": ["sensativeUsername", "sensativePassword"],
         "chumba": false,
         "pulsz": false,
         "fortuneCoin": false,
