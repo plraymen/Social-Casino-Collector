@@ -1,0 +1,18 @@
+{
+  "name": "social-casinos",
+  "version": "1.0.0",
+  "description": "Bot to collet daily rewards from social casinos",
+  "main": "social.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paul R",
+  "license": "ISC",
+  "dependencies": {
+    "@nut-tree/nut-js": "^3.1.1",
+    "clipboardy": "^3.0.0",
+    "jsonminify": "^0.4.2",
+    "puppeteer": "^19.10.1",
+    "puppeteer-extra": "^3.3.6"
+  }
+}
