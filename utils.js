@@ -17,3 +17,5 @@ exports.pasteString = input.pasteString;
 exports.inputString = input.inputString;
 exports.clearString = input.clearString;
 exports.clickAt = input.clickAt;
+exports.click = input.click;
+exports.moveTo = input.moveTo;

@@ -6,30 +6,103 @@ var exec = require('child_process').exec;
 var fs = require("fs");
 var path = require("path");
 var logger = require("./log.js");
+var imageSearch = require("./imageSearch.js");
+const {keyboard, Key, mouse, screen, Point, Region} = require("@nut-tree/nut-js");
 
 async function init() {
     var config = configs.loadConfig();
-    var results = {};
+    var results = {
+        general: {
+            messages: [],
+        }
+    };
 
-    // Load up the browser
-    var browser = await startBrowser(config, results);
+    if (config.forever) {
+        console.log("Forever flag set. Will collect daily randomly between the time of: " + config.collectionTime[0] + ", and " + config.collectionTime[1]);
+        console.log("Press control+c or close this window to stop the bot");
+        foreverStart(config);
 
-    // Collect from each site one by one
-    var collect = await collecter.collectAll(browser, config, results);
-
-    // Write daily logs
-    if (config.dailyLog) {
-        await logger.buildLog(results, config);
-        await utils.sleep(5000);
+        await utils.sleep(1000000);
+    } else {
+        standardStart(config);
     }
+}
 
-    // Clean up
-    await browser.close();
-    console.log("Finished collecting. Details in log file.");
+async function foreverStart(config) {
+    await foreverTick(config);
+}
 
-    exit(1);
+async function foreverTick(config) {
+    var collectedToday = false;
+    var collectionTime;
+    
+    // parse out config collection times into minutes
+    var startMinutes = 0;
+    var startTime = config.collectionTime[0].split(":");
+    startMinutes += parseInt(startTime[0]) * 60;
+    startMinutes += parseInt(startTime[1]);
 
-    return;
+    var endMinutes = 0;
+    var endTime = config.collectionTime[1].split(":");
+    endMinutes += parseInt(endTime[0]) * 60;
+    endMinutes += parseInt(endTime[1]);
+
+    collectionTime = await setCollectionTime(startMinutes, endMinutes);
+    console.log("Setting today's collection time");
+    console.log("Collection time will be at: " + Math.floor(collectionTime / 60) + ":" + collectionTime % 60 + " today (military time)");
+
+    while (true) {
+        var date = new Date();
+        var minutes = date.getMinutes() + 60 * date.getHours();
+
+        if (minutes == collectionTime && !collectedToday) {
+            console.log("Collecting Now");
+            standardStart();
+            collectedToday = true;
+            collectionTime = await setCollectionTime(startMinutes, endMinutes);
+            console.log("Setting tomorrow's collection time");
+            console.log("Collection time will be at: " + Math.floor(collectionTime / 60) + ":" + collectionTime % 60 + " tomorrow (military time)");
+        }
+
+        if (minutes > endMinutes) {
+            collectedToday = false;
+        }
+        
+        await utils.sleep(1000);
+    }
+}
+
+async function setCollectionTime(startMinutes, endMinutes) {
+   return Math.round((Math.random() * (endMinutes - startMinutes)) + startMinutes);
+}
+
+async function standardStart(config) {
+    if (!config) {
+        config = configs.loadConfig();
+    }
+    var results = {
+        general: {
+            messages: [],
+        }
+    };
+
+   // Load up the browser
+   var browser = await startBrowser(config, results);
+
+   // Collect from each site one by one
+   var collect = await collecter.collectAll(browser, config, results);
+
+   // Write daily logs
+   if (config.dailyLog) {
+       await logger.buildLog(results, config);
+       await utils.sleep(5000);
+   }
+
+   // Clean up
+   await browser.close();
+   console.log("Finished collecting. Details in log file.");
+
+   return;
 }
 
 async function startBrowser(config, results) {
@@ -40,72 +113,32 @@ async function startBrowser(config, results) {
             console.log(err);
         }
     });
-
-    await utils.sleep(4000);
-
-    var browserCrashFix = new browse.Browser(config.browserProfile || "", config.browserType);
-    await browserCrashFix.init();
-    var fronter = await browserCrashFix.newPage("https://www.bing.com");
-    await browserCrashFix.newPage("https://www.google.com/");
-    await browserCrashFix.newPage("https://www.bing.com");
-    fronter.bringToFront();
-    await utils.sleep(2000);
-
-    browserToKill = (config.browserType == "Edge") ? "msedge" : "chrome";
-    exec('powershell -command "Get-Process ' + browserToKill + ' | ForEach-Object { $_.CloseMainWindow() | Out-Null}"', function(err,sysout,syserr) {
-        if (err && err.code != 1) {
-            console.log(err);
-        }
-    });
+    await utils.sleep(2500);
     
-    console.log("Double starting to prevent browser popups");
-    await utils.sleep(2500);
-    browserCrashFix.close();
-    await utils.sleep(2500);
-
-    // Need to update crash value in profile preferences if user or bot has forced closed a browser
-    //await crashFix(config, results);
-    //await utils.sleep(100);
-
     // Start a new browser with settings from the config
     var browser = new browse.Browser(config.browserProfile || "", config.browserType);
     await browser.init(true);
     await utils.sleep(1500);
 
-    console.log("Browser Started");
+    await crashFix(browser);
+    await utils.sleep(1000);
 
     return browser;
 }
 
-async function crashFix(config, results) {
-    var preferencePath = "";
+async function crashFix(browser) {
+    var screenWidth = await screen.width();
+    var screenHeight = await screen.height();
+    var printImg = await screen.captureRegion("screenCapture.png", new Region(0, 0, screenWidth - 1, screenHeight - 1));
+    
+    var restoreLocation = await imageSearch.matchImage("./images/restore.png", "./screenCapture.png", 5);
 
-    //console.log(process.env.LOCALAPPDATA);
-    if (config.browserType == "Chrome" && !config.browserProfile) {
-        preferencePath = path.join(process.env.LOCALAPPDATA + "/Google/Chrome/User Data/ Profile 1/Preferences")
-    } else if (config.browserType == "Edge" && !config.browserProfile) {
-        preferencePath = path.join(process.env.LOCALAPPDATA + "/Microsoft/Edge/User Data/Default/Preferences") 
+    if (restoreLocation) {
+        await utils.clickAt(restoreLocation.x + 6, restoreLocation.y + 3);
+        await utils.sleep(500);
+        await browser.closeAll();
     }
-
-    try {
-        var preferenceFile = fs.readFileSync(preferencePath).toString();
-
-        var preferences = JSON.parse(preferenceFile);
-        preferences.profile.exit_type = 'none';
-
-        var preferenceWrite = JSON.stringify(preferences);
-
-        fs.writeFileSync(preferencePath, preferenceWrite);
-    } catch (err) {
-        //console.log(err);
-
-        if (!results.general) {results.general = {}}
-        if (!results.general.messages) {results.general.messages = []};
-
-        results.general.messages.push("Error setting profile exit_type to none, bot may not work if the browser was open before the bot started")
-    }
-
-
+    
     return;
 }
 

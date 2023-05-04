@@ -85,6 +85,22 @@ async function clickAt(x, y) {
 
     return true;
 }
+/**
+ * Clicks the left mouse button
+ */
+async function click() {
+    await mouse.click(Button.LEFT);
+
+    return true;
+}
+/**
+ * Moves mouse to the specified X, Y cords on the screen
+ */
+async function moveTo(x, y) {
+    await mouse.move(straightTo(new Point(x, y)));
+
+    return true;
+}
 
 /**
  * Sleeps ms milliseconds
@@ -99,3 +115,5 @@ exports.pasteString = pasteString;
 exports.inputString = inputString;
 exports.clearString = clearString;
 exports.clickAt = clickAt;
+exports.click = click;
+exports.moveTo = moveTo;

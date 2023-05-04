@@ -14,6 +14,11 @@
     "dailyLog": true,
     "autoGamble": false,
 
+    // Forever: If true will cause the bot to run in the background until stopped, collecting daily some time between the user specified interval
+    // Collection time: Military time in the format ["hh:mm", "hh:mm"]
+    "forever": false,
+    "collectionTime": ["13:50", "14:30"],
+
     // Set the websites you have accounts with to be true, and the ones that you do not have as false
     "collect": {
         "chumba": true,

@@ -33,7 +33,7 @@ async function buildLog(results, config) {
     // Log any additional messages if there were any
     if (results.general && results.general.messages) {
         for (var i = 0; i < results.general.messages.length; i++) {
-            logString += "\n" + results.general.message[0];
+            logString += "\n" + results.general.messages[i];
         }
     } else {
         logString += " None";

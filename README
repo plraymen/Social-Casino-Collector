@@ -1,28 +1,36 @@
-This bot will automatically collect from Chumba, Pulsz, Fortunecoins, Luckyland, Wow Vegas (Stake.us, and Global Poker coming soon).
+This bot will automatically collect from Chumba, Pulsz, Fortunecoins, Luckyland (Stake.us, and Global Poker coming soon).
 
 This bot has been tested and works on windows 11. The libraries used should work on Linux, but would need to be tested.
-
-Please go to the config.json file (in this folder) to input your logins for each account as well as to adjust settings.
 
 =============================
 | Installation Instructions |
 =============================
 
-- Install node.js (this bot was tested on v19.6.0)
-- Install npm (Node Package Manager)
-- Run "npm install" in this directory (without quotes)
-- Edit the config.example.json file to you needs (needs to be saved as config.json)
-- Run "node social.js" to run the bot
+Automatic install
+    - Run the file install-pt1.bat
+    - Run the file install-pt2.bat
+    
+    - Run the bot with run.bat or by "node social.js" in the command line
 
-============================
-| Bot Quirks - Please Read |
-============================
+Manual Install
+    - Install node.js / npm (this bot was tested on v19.6.0)
+        + https://nodejs.org/en/download
+    - Run "npm install" in this directory (without quotes)
+    - Edit the config.example.json file to you needs (needs to be saved as config.json)
+    - Run the bot with using the run.bat file or by running "node social.js" from the command line in this directory
+
+===========================
+| Bot Notes - Please Read |
+===========================
 - In order to connect to your browser this bot needs to close your existing browser session, and reopen.
-
-- This bot needs to be ran with "node social.js" every day. Eventually planning on building a bot that sits in the background all the time to run once a day.
 
 - This bot does not sign up, or withdraw from casinos. It only collects the daily login bonuses.
 
-- Luckyland Slots Application is built into a canvas, automatic login is not supported yet. Collection is (Cookies save your login session for weeks). Thus you need to login to luckyland slots before running the bot (first time only).
-
-- "Do you want to save the password on this site" popup breaks the bot. Looking to fix this issue eventually however, in the meantime please make sure this popup does not appear when you log into a site.
+================
+| Casino Links |
+================
+Chumba: https://www.chumbacasino.com/
+Pulsz: www.pulsz.com/
+Fortune Coins: https://www.fortunecoins.com/
+Luckyland: http://luckylandslots.com/
+Wow vegas (Wow vegas recently removed daily login bonus for non paying customers): https://www.wowvegas.com/

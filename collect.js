@@ -1,5 +1,6 @@
 var utils = require("./utils.js");
-const {keyboard, Key, mouse, screen, Point} = require("@nut-tree/nut-js");
+var imageSearch = require("./imageSearch.js");
+const {keyboard, Key, mouse, screen, Point, Region} = require("@nut-tree/nut-js");
 
 /**
  * Collects from Chumba casino
@@ -22,6 +23,7 @@ async function collectChumba(browser, config, results) {
 
         await standardLogin(browser, page, config, results, "chumba");
         await browser.waitForLoad(page, 7500);
+        await closeSavePasswordPopup(browser, page);
         await utils.sleep(500);
     }
 
@@ -71,6 +73,7 @@ async function collectPulsz(browser, config, results) {
 
         await standardLogin(browser, page, config, results, "pulsz");
         await browser.waitForLoad(page, 7500);
+        await closeSavePasswordPopup(browser, page);
         await utils.sleep(500);
     }
 
@@ -134,6 +137,7 @@ async function collectFortuneCoin(browser, config, results) {
 
         await standardLogin(browser, page, config, results, "fortuneCoin");
         await browser.waitForLoad(page, 7500);
+        await closeSavePasswordPopup(browser, page);
         await utils.sleep(500);
     }
 
@@ -145,6 +149,13 @@ async function collectFortuneCoin(browser, config, results) {
     if (popupToClose) {
         await browser.clickElement(page, popupToClose);
         await utils.sleep(1000);
+
+        popupToClose = await browser.findElement(page, ".closePopupButton");
+        
+        if (popupToClose) {
+            await browser.clickElement(page, popupToClose);
+            await utils.sleep(1000);
+        }
 
         popupToClose = await browser.findElement(page, ".closePopupButton");
         
@@ -199,13 +210,69 @@ async function collectLuckyland(browser, config, results) {
         collectSuccess: false,
     };
 
-    var page = await browser.newPage("https://luckylandslots.com/loader");
+    var page = await browser.newPage("https://luckylandslots.com/loader")
 
     await utils.sleep(20000);
 
-    await browser.findLuckylandCollect(page);
+    var boundingBox = await browser.findElement(page, "#lls-main-canvas");
+    boundingBox.height = Math.floor(boundingBox.height);
+    boundingBox.width = Math.floor(boundingBox.width);
 
-    results.luckyland.collectSuccess = true;
+    var maxHeight = (await screen.height() - 1);
+    var maxWidth = (await screen.width()) - 1;
+
+    var regionX = boundingBox.x;
+    var regionY = boundingBox.y + browser.getToolbarOffset();
+    var regionWidth = Math.min(boundingBox.width, maxWidth - boundingBox.x);
+    var regionHeight = Math.min(boundingBox.height, maxHeight - boundingBox.y - browser.getToolbarOffset());
+
+    var printImg = await screen.captureRegion("luckylandcapture.png", new Region(regionX, regionY, regionWidth, regionHeight));
+
+    // Check to see if we are already logged in
+    var needLogin = await imageSearch.matchImage("./images/luckylandLogin.png", "./luckylandcapture.png", 10);
+    if (needLogin) {
+        var buttonPosition = needLogin;
+
+        await utils.moveTo(buttonPosition.x + boundingBox.x + 10, buttonPosition.y + boundingBox.y + 5 + browser.getToolbarOffset())
+        await utils.sleep(100);
+        await utils.click();
+        await utils.sleep(1000);
+
+        var logins = config.logins.luckyLand || config.logins.standard;
+
+        await utils.inputString(logins[0]);
+        await utils.sleep(1000);
+        await keyboard.pressKey(Key.Tab);
+        await keyboard.releaseKey(Key.Tab);
+        await utils.sleep(100);
+        await utils.inputString(logins[1]);
+        await utils.sleep(100);
+        await keyboard.pressKey(Key.Enter);
+        await keyboard.releaseKey(Key.Enter);
+        await utils.sleep(4000);
+
+        // Need to reset luckyland capture
+        printImg = await screen.captureRegion("luckylandcapture.png", new Region(regionX, regionY, regionWidth, regionHeight));
+    } 
+
+
+    await utils.sleep(1000);
+    var todayButton = await imageSearch.matchImage("./images/todayButton.png", "./luckylandcapture.png");
+    var collectButton = await imageSearch.matchImage("./images/todayButton.png", "./luckylandcapture.png");
+
+    if (todayButton || collectButton) {
+        var buttonPosition = todayButton || collectButton;
+
+        await utils.moveTo(buttonPosition.x + boundingBox.x + 10, buttonPosition.y + boundingBox.y + 5 + browser.getToolbarOffset())
+        await utils.sleep(100);
+        await utils.click();
+
+        results.luckyland.collectSuccess = true;
+    } else {
+        results.luckyland.collectSuccess = false;
+    }
+
+    await utils.sleep(4000 + Math.random() * 3000); 
 
     return;
 }
@@ -227,6 +294,7 @@ async function collectWowVegas(browser, config, results) {
 
     await standardLogin(browser, page, config, results, "wowVegas");
     await utils.sleep(2500);
+    await closeSavePasswordPopup(browser, page);
 
     // Collect
     await browser.goto(page, "https://www.wowvegas.com/promotions");
@@ -350,21 +418,24 @@ async function collectAll(browser, config, results) {
         }
     }
 
-    if (config.collect.luckyland) {
-        try {
-            await collectLuckyland(browser, config, results);
-        } catch {
-            console.log("Error Collecting from Luckyland Casino");
-            results.luckyland = false;
-        }
-    }
-
     if (config.collect.wowVegas) {
         try {
             await collectWowVegas(browser, config, results);
         } catch {
             console.log("Error Collecting from Wow Vegas");
             results.wowVegas = false;
+        }
+    }
+
+    if (config.collect.luckyland) {
+        try {
+            await collectLuckyland(browser, config, results);
+        } catch (err) {
+            console.log("Error Collecting from Luckyland Casino");
+
+            results.general.messages.push(err);
+            
+            results.luckyland = false;
         }
     }
 
@@ -430,6 +501,23 @@ async function standardClaim(browser, page, buttonText, site, results) {
 
         results[site].collectSuccess = true;
     }
+}
+
+async function closeSavePasswordPopup(browser, page) {
+    await utils.sleep(3000);
+
+    var screenWidth = await screen.width();
+    var screenHeight = await screen.height();
+    var printImg = await screen.captureRegion("screenCapture.png", new Region(0, 0, screenWidth - 1, screenHeight - 1));
+    
+    var savePasswordPopup = await imageSearch.matchImage("./images/passwordPopup.png", "./screenCapture.png", 15);
+
+    if (savePasswordPopup) {
+        await utils.clickAt(savePasswordPopup.x + savePasswordPopup.width - 12, savePasswordPopup.y + 10);
+        await utils.sleep(1000);
+    }
+
+    return;
 }
 
 exports.collectAll = collectAll;

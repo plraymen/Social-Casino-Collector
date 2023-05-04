@@ -503,6 +503,7 @@ class Browser {
         }
     }
 
+    /*
     async findLuckylandCollect(page) {
         var boundingBox = await this.findElement(page, "#lls-main-canvas");
         
@@ -582,6 +583,7 @@ class Browser {
         }); 
         
     }
+    */
     
     /**
      * Calls and returns puppeteer evaluate function on the given page
@@ -635,6 +637,10 @@ class Browser {
         }
 
         return true;
+    }
+
+    getToolbarOffset() {
+        return this.browserToolbarOffset;
     }
 
     /**
