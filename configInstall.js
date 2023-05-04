@@ -6,8 +6,6 @@ const readline = require('readline');
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const prompt = (query) => new Promise((resolve) => rl.question(query, resolve));
 
-fs.writeFileSync("./config.js", "Nig")
-
 // Usage inside aync function do not need closure demo only
 (async() => {
   try {
