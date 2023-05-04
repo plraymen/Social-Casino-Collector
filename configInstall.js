@@ -123,7 +123,7 @@ const prompt = (query) => new Promise((resolve) => rl.question(query, resolve));
     }
 
     var toWrite = JSON.stringify(config);
-    fs.writeFile('config.json', toWrite);
+    fs.writeFileSync('config.json', toWrite);
 
     await utils.sleep(1000);
 
